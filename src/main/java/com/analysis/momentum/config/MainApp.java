@@ -16,6 +16,14 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.YearMonth;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
@@ -29,6 +37,11 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 
+import com.analysis.momentum.index.data.IndexData;
+import com.analysis.momentum.index.data.YahooFinance;
+import com.analysis.momentum.model.PriceData;
+import com.analysis.momentum.model.Stock;
+
 /**
  * @author Sony
  *
@@ -41,35 +54,45 @@ private static final String url4 = "https://ca.finance.yahoo.com/quote/TCS.NS/hi
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println("Hello World");
-		String sample = "dndnksndkndkn\"CrumbStore\":{\"crumb\":\"sMt9UQ80bWV\"}dldndldldnln\"}cccc";
-		//String pattern = (.*)(\Q"CrumbStore":{"crumb":"\E)(.*)(\Q"}\E)(.*)
-		String pattern = "(.*)(\"CrumbStore\":\\{\"crumb\":\")(.*?)(\"\\})(.*)";
 		try {
-		      /*Pattern r = Pattern.compile(pattern);
-		      Matcher m = r.matcher(sample);
+			final IndexData indexData = new IndexData("H://tmp/index1.txt");
+			final YahooFinance yahooFinance = new YahooFinance();
+			final Date endDate =  new Date();
+			long year = 365L * 24L * 60L * 60L * 1000L;
+			//final long startTime = (endDate.getTime() - year)/1000L;
+			//final long endTime = endDate.getTime() / 1000L;
+			
+			indexData.getIndexData().forEach(symbol ->{
+				//final Stock stock =yahooFinance.getPriceDataForStockFromYahoo(symbol, startTime, endTime);
+				final Stock stock =yahooFinance.getPriceDataForStockFromFile(symbol);
+				//final Map<LocalDate, PriceData> dateToPriceData = stock.getBhavDateToPriceData();
+				
+				List<YearMonth> months = stock.getAllMonths();
+				Map<YearMonth, LinkedList<PriceData>> monthToPriceData = stock.getMonthToPriceData();
+				
+				months.forEach(m -> {
+					System.out.println(m.getMonth().name() + "-" + m.getYear());
+				});
+				monthToPriceData.forEach((month, priceDataForMonth) -> {
+					System.out.println("For " + month.getMonth().name() + "-" + month.getYear());
+					System.out.println("Last day of month " + priceDataForMonth.getLast().getLocalDate());
+				});
+				/*dateToPriceData.forEach((localDate,priceData) -> {
+					System.out.println(localDate);
+					System.out.println(priceData.toString());
+					Month month = localDate.getMonth();					
+				});*/
 
-		      if (m.find( )) {
-		          System.out.println("Found value: " + m.group(0) );
-		          System.out.println("Found value: " + m.group(1) );
-		          System.out.println("Found value: " + m.group(2) );
-		          System.out.println("Found value: " + m.group(3) ); 
-		          System.out.println("Found value: " + m.group(4) );
-		          System.out.println("Found value: " + m.group(5) );
-		          
-		       }else {
-		          System.out.println("NO MATCH");
-		       }*/
-
-			testNse1();
+				
+				System.out.println("Completed for " + symbol);
+			});
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
 	
-	public static void testNse1() throws IOException {
+	public static void getDataFromYahoo() throws IOException {
         URL url = new URL(url4);
         String pattern = "(.*)(\"CrumbStore\":\\{\"crumb\":\")(.*?)(\"\\})(.*)";
 		final BufferedWriter bw = new BufferedWriter(new FileWriter("H://tmp/tcs.txt"));
@@ -155,46 +178,5 @@ private static final String url4 = "https://ca.finance.yahoo.com/quote/TCS.NS/hi
 	        
 		        bw1.flush();
 		        bw1.close();
-	}
-	
-	public static void testNse() throws IOException {
-		CookieStore cookieStore  = new ThreadSafeCookieStore();
-		String pattern = "(.*)(\"CrumbStore\":\\{\"crumb\":\")(.*?)(\"\\})(.*)";
-		Pattern r = Pattern.compile(pattern);
-		
-		AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setCookieStore(cookieStore).build();
-	
-		AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config);
-		Future<Response> whenResponse = asyncHttpClient.prepareGet(url4).execute();
-		
-		try {
-			Response res = whenResponse.get();
-			
-		
-			if (res.getResponseBody().contains("crumb")) {
-				System.out.println("crumb found");
-				
-			}
-			Matcher m = r.matcher(res.getResponseBody());
-		      if (m.find( )) {
-		          System.out.println("Found value of crumb: " + m.group(3) ); 
-		       }
-
-			Future<Response> whenResponse2 = asyncHttpClient.prepareGet(url3 + m.group(3)).execute();
-			
-			
-			
-			//System.out.println(r.getResponseBody());
-			
-			Response r2 = whenResponse2.get();
-			System.out.println(r2.getResponseBody());
-			
-		} catch (InterruptedException e) {
-			System.out.println("Interrupted exception: ");
-			 e.printStackTrace();
-		} catch (ExecutionException e) {
-			System.out.println("ExecutionException: ");
-			e.printStackTrace();
-		}
-	}
+	}	
 }
