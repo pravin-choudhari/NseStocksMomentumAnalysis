@@ -37,6 +37,7 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 
+import com.analysis.momentum.analysis.Analysis;
 import com.analysis.momentum.index.data.IndexData;
 import com.analysis.momentum.index.data.YahooFinance;
 import com.analysis.momentum.model.PriceData;
@@ -55,36 +56,35 @@ private static final String url4 = "https://ca.finance.yahoo.com/quote/TCS.NS/hi
 	 */
 	public static void main(String[] args) {
 		try {
-			final IndexData indexData = new IndexData("H://tmp/index1.txt");
+			final IndexData indexData = new IndexData("H://tmp/index.txt");
 			final YahooFinance yahooFinance = new YahooFinance();
 			final Date endDate =  new Date();
 			long year = 365L * 24L * 60L * 60L * 1000L;
-			//final long startTime = (endDate.getTime() - year)/1000L;
-			//final long endTime = endDate.getTime() / 1000L;
+			final long startTime = (endDate.getTime() - year)/1000L;
+			final long endTime = endDate.getTime() / 1000L;
 			
 			indexData.getIndexData().forEach(symbol ->{
-				//final Stock stock =yahooFinance.getPriceDataForStockFromYahoo(symbol, startTime, endTime);
-				final Stock stock =yahooFinance.getPriceDataForStockFromFile(symbol);
+				final Stock stock =yahooFinance.getPriceDataForStockFromYahoo(symbol, startTime, endTime);
+				//final Stock stock =yahooFinance.getPriceDataForStockFromFile(symbol);
 				//final Map<LocalDate, PriceData> dateToPriceData = stock.getBhavDateToPriceData();
 				
 				List<YearMonth> months = stock.getAllMonths();
 				Map<YearMonth, LinkedList<PriceData>> monthToPriceData = stock.getMonthToPriceData();
 				
-				months.forEach(m -> {
+				Analysis analysis = new Analysis();
+				
+				analysis.setMonthToPriceData(monthToPriceData);
+				analysis.generateAnalysis(stock);
+				
+				/*months.forEach(m -> {
 					System.out.println(m.getMonth().name() + "-" + m.getYear());
 				});
 				monthToPriceData.forEach((month, priceDataForMonth) -> {
 					System.out.println("For " + month.getMonth().name() + "-" + month.getYear());
 					System.out.println("Last day of month " + priceDataForMonth.getLast().getLocalDate());
-				});
-				/*dateToPriceData.forEach((localDate,priceData) -> {
-					System.out.println(localDate);
-					System.out.println(priceData.toString());
-					Month month = localDate.getMonth();					
 				});*/
-
 				
-				System.out.println("Completed for " + symbol);
+				//System.out.println("Completed for " + symbol);
 			});
 		} catch (Exception e) {
 			e.printStackTrace();
